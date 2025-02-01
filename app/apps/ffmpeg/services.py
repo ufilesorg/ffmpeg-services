@@ -7,14 +7,10 @@ from io import BytesIO
 from pathlib import Path
 from urllib.parse import urlparse
 
+import ufiles
 from fastapi_mongo_base.utils import aionetwork
-from fastapi_mongo_base.utils.basic import try_except_wrapper
 from fastapi_mongo_base.utils.texttools import sanitize_filename
 from server.config import Settings
-from ufaas import AsyncUFaaS
-from ufaas.apps.saas.schemas import UsageCreateSchema
-
-import ufiles
 
 from .models import Burn
 
@@ -92,57 +88,6 @@ async def upload_video(
         meta_data=meta_data,
     )
     return ufile_item.url
-
-
-@try_except_wrapper
-async def meter_cost(subtitle: Burn):
-    ufaas_client = AsyncUFaaS(
-        ufaas_base_url=Settings.UFAAS_BASE_URL,
-        usso_base_url=Settings.USSO_BASE_URL,
-        # TODO: Change to UFAAS_API_KEY name
-        api_key=Settings.UFILES_API_KEY,
-    )
-    usage_schema = UsageCreateSchema(
-        user_id=subtitle.user_id,
-        asset="coin",
-        amount=subtitle.price,
-        variant="subtitle",
-    )
-    usage = await ufaas_client.saas.usages.create_item(
-        usage_schema.model_dump(mode="json")
-    )
-    subtitle.usage_id = usage.uid
-    await subtitle.save()
-    return usage
-
-
-@try_except_wrapper
-async def get_quota(user_id: uuid.UUID):
-    ufaas_client = AsyncUFaaS(
-        ufaas_base_url=Settings.UFAAS_BASE_URL,
-        usso_base_url=Settings.USSO_BASE_URL,
-        # TODO: Change to UFAAS_API_KEY name
-        api_key=Settings.UFILES_API_KEY,
-    )
-    quotas = await ufaas_client.saas.enrollments.get_quotas(
-        user_id=user_id,
-        asset="coin",
-        variant="subtitle",
-    )
-    return quotas.quota
-
-
-@try_except_wrapper
-async def cancel_usage(subtitle: Burn):
-    if subtitle.usage_id is None:
-        return
-
-    async with AsyncUFaaS(
-        ufaas_base_url=Settings.UFAAS_BASE_URL,
-        usso_base_url=Settings.USSO_BASE_URL,
-        api_key=Settings.UFILES_API_KEY,
-    ) as ufaas_client:
-        await ufaas_client.saas.usages.cancel_item(subtitle.usage_id)
 
 
 def srt_to_subtitles(subs, video_size):

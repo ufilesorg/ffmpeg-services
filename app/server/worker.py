@@ -3,7 +3,6 @@ import logging
 
 # from apps.burn.worker import update_subtitle
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from server.config import Settings
 
 # import pytz
 # irst_timezone = pytz.timezone("Asia/Tehran")

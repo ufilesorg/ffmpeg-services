@@ -72,7 +72,7 @@ async def upload_video(
     file_content: BytesIO,
     file_name: str,
     user_id: uuid.UUID,
-    file_upload_dir: str = "subtitles",
+    file_upload_dir: str = "ffmpeg",
     meta_data: dict = {},
 ):
     ufiles_client = ufiles.AsyncUFiles(
